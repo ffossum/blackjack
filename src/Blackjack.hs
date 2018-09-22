@@ -105,13 +105,6 @@ addCardToDealerHand :: Card -> GameState -> GameState
 addCardToDealerHand c (GameState d ph dh) =
   GameState d ph ((addCardToHand c) dh)
 
-anyBlackjack :: GameState -> Bool
-anyBlackjack gs =
-  isBlackjack (gameStatePlayerHand gs) || isBlackjack (gameStateDealerHand gs)
-
-isBlackjack :: Hand -> Bool
-isBlackjack hand = (handScore hand) == 21
-
 determineOutcome :: GameState -> Outcome
 determineOutcome gs
   | playerScore > 21 = DealerWin
