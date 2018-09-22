@@ -1,9 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Blackjack
   ( someFunc
   ) where
 
 import Card
 import Control.Monad.State
+import Data.Text (Text)
+import qualified Data.Text as T
 
 newtype Deck =
   Deck [Card]
@@ -21,7 +25,7 @@ data GameState = GameState
   } deriving (Show)
 
 data GameSummary = GameSummary
-  { gameSummaryPlayerName :: String
+  { gameSummaryPlayerName :: Text
   , gameSummaryGameState :: GameState
   , gameSummaryOutcome :: Outcome
   } deriving (Show)
@@ -36,7 +40,7 @@ exampleDeck =
     , Card Spades (Numbered 8)
     ]
 
-runGame :: String -> Deck -> GameSummary
+runGame :: Text -> Deck -> GameSummary
 runGame playerName deck = evalState f initialState
   where
     initialState = newGameState deck
@@ -49,7 +53,7 @@ runGame playerName deck = evalState f initialState
 
 newGameState :: Deck -> GameState
 newGameState (Deck (c0:c1:c2:c3:cs)) =
-  GameState (Deck cs) (Hand [c0, c2]) (Hand [c1, c3])
+  GameState (Deck cs) (Hand [c2, c0]) (Hand [c3, c1])
 newGameState _ = undefined -- TODO
 
 drawPlayerCards :: GameState -> GameState
@@ -121,3 +125,19 @@ determineOutcome gs
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
+
+gameSummaryToText :: GameSummary -> Text
+gameSummaryToText (GameSummary playerName gs outcome) =
+  winner <> "\n" <> playerCards <> "\n" <> dealerCards <> "\n"
+  where
+    winner =
+      case outcome of
+        PlayerWin -> playerName
+        DealerWin -> "dealer"
+    playerCards =
+      let (Hand cs) = gameStatePlayerHand gs
+      in playerName <> ": " <>
+         (T.intercalate ", " (cardAsText <$> (reverse cs)))
+    dealerCards =
+      let (Hand cs) = gameStateDealerHand gs
+      in "dealer: " <> (T.intercalate ", " (cardAsText <$> (reverse cs)))
