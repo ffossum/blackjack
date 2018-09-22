@@ -1,6 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Card where
 
 import Data.List
+import qualified Data.Text as T
+import TextShow
 
 data Suit
   = Clubs
@@ -21,6 +25,25 @@ data Card = Card
   { cardSuit :: Suit
   , cardValue :: Value
   } deriving (Eq, Show)
+
+suitAsText :: Suit -> T.Text
+suitAsText Clubs = "C"
+suitAsText Diamonds = "D"
+suitAsText Hearts = "H"
+suitAsText Spades = "S"
+
+valueAsText :: Value -> T.Text
+valueAsText (Numbered i) = showt i
+valueAsText Jack = "J"
+valueAsText Queen = "Q"
+valueAsText King = "K"
+valueAsText Ace = "A"
+
+cardAsText :: Card -> T.Text
+cardAsText c =
+  let suit = cardSuit c
+      value = cardValue c
+  in (suitAsText suit) <> (valueAsText value)
 
 newtype Hand =
   Hand [Card]
