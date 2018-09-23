@@ -9,10 +9,6 @@ import Control.Monad.State
 import Data.Text (Text)
 import qualified Data.Text as T
 
-newtype Deck =
-  Deck [Card]
-  deriving (Show)
-
 data Outcome
   = DealerWin
   | PlayerWin
@@ -96,7 +92,7 @@ drawCardForDealer gs =
 drawCard :: GameState -> (Card, GameState)
 drawCard (GameState (Deck (c:cs)) ph dh) = (c, nextState)
   where
-    nextState = (GameState (Deck cs) ph dh)
+    nextState = GameState (Deck cs) ph dh
 
 addCardToHand :: Card -> Hand -> Hand
 addCardToHand c (Hand cs) = Hand (c : cs)
@@ -106,8 +102,7 @@ addCardToPlayerHand c (GameState d ph dh) =
   GameState d ((addCardToHand c) ph) dh
 
 addCardToDealerHand :: Card -> GameState -> GameState
-addCardToDealerHand c (GameState d ph dh) =
-  GameState d ph ((addCardToHand c) dh)
+addCardToDealerHand c (GameState d ph dh) = GameState d ph (addCardToHand c dh)
 
 determineOutcome :: GameState -> Outcome
 determineOutcome gs
@@ -136,8 +131,7 @@ gameSummaryToText (GameSummary playerName gs outcome) =
         DealerWin -> "dealer"
     playerCards =
       let (Hand cs) = gameStatePlayerHand gs
-      in playerName <> ": " <>
-         (T.intercalate ", " (cardAsText <$> (reverse cs)))
+      in playerName <> ": " <> (T.intercalate ", " (cardAsText <$> reverse cs))
     dealerCards =
       let (Hand cs) = gameStateDealerHand gs
-      in "dealer: " <> (T.intercalate ", " (cardAsText <$> (reverse cs)))
+      in "dealer: " <> (T.intercalate ", " (cardAsText <$> reverse cs))

@@ -3,6 +3,7 @@
 module Card where
 
 import Data.List
+import Data.Text (Text)
 import qualified Data.Text as T
 import TextShow
 
@@ -21,33 +22,34 @@ data Value
   | Ace
   deriving (Eq, Show)
 
-data Card = Card
-  { cardSuit :: Suit
-  , cardValue :: Value
-  } deriving (Eq, Show)
+data Card =
+  Card Suit
+       Value
+  deriving (Eq, Show)
 
-suitAsText :: Suit -> T.Text
+newtype Deck =
+  Deck [Card]
+  deriving (Show)
+
+newtype Hand =
+  Hand [Card]
+  deriving (Eq, Show)
+
+suitAsText :: Suit -> Text
 suitAsText Clubs = "C"
 suitAsText Diamonds = "D"
 suitAsText Hearts = "H"
 suitAsText Spades = "S"
 
-valueAsText :: Value -> T.Text
+valueAsText :: Value -> Text
 valueAsText (Numbered i) = showt i
 valueAsText Jack = "J"
 valueAsText Queen = "Q"
 valueAsText King = "K"
 valueAsText Ace = "A"
 
-cardAsText :: Card -> T.Text
-cardAsText c =
-  let suit = cardSuit c
-      value = cardValue c
-  in (suitAsText suit) <> (valueAsText value)
-
-newtype Hand =
-  Hand [Card]
-  deriving (Eq, Show)
+cardAsText :: Card -> Text
+cardAsText (Card suit value) = (suitAsText suit) <> (valueAsText value)
 
 allSuits :: [Suit]
 allSuits = [Clubs, Diamonds, Hearts, Spades]
@@ -62,8 +64,8 @@ allCards = do
   pure $ Card s v
 
 cardScore :: Card -> Int
-cardScore c =
-  case (cardValue c) of
+cardScore (Card _ value) =
+  case value of
     (Numbered v) -> v
     Ace -> 11
     _ -> 10

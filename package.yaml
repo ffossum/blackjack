@@ -24,6 +24,7 @@ dependencies:
   - mtl
   - text
   - text-show
+  - attoparsec
 
 library:
   source-dirs: src
