@@ -3,6 +3,7 @@
 module Blackjack
   ( runGame
   , randomDeck
+  , GameSummary(..)
   , gameSummaryAsText
   , PlayerName(..)
   , Deck(..)
@@ -38,7 +39,7 @@ data GameSummary = GameSummary
 randomDeck :: IO Deck
 randomDeck = Deck <$> shuffleM allCards
 
-runGame :: PlayerName -> Deck -> Either Text GameSummary
+runGame :: PlayerName -> Deck -> Either String GameSummary
 runGame playerName deck = evalState f <$> initialState
   where
     initialState = newGameState deck
@@ -49,7 +50,7 @@ runGame playerName deck = evalState f <$> initialState
       let outcome = determineOutcome finalState
       return (GameSummary playerName finalState outcome)
 
-newGameState :: Deck -> Either Text GameState
+newGameState :: Deck -> Either String GameState
 newGameState (Deck (c0:c1:c2:c3:cs)) =
   Right $ GameState (Deck cs) (Hand [c2, c0]) (Hand [c3, c1])
 newGameState _ = Left "Not enough cards in the deck."
@@ -104,8 +105,7 @@ addCardToHand :: Card -> Hand -> Hand
 addCardToHand c (Hand cs) = Hand (c : cs)
 
 addCardToPlayerHand :: Card -> GameState -> GameState
-addCardToPlayerHand c (GameState d ph dh) =
-  GameState d ((addCardToHand c) ph) dh
+addCardToPlayerHand c (GameState d ph dh) = GameState d (addCardToHand c ph) dh
 
 addCardToDealerHand :: Card -> GameState -> GameState
 addCardToDealerHand c (GameState d ph dh) = GameState d ph (addCardToHand c dh)
@@ -116,8 +116,9 @@ determineOutcome gs
   | dealerScore > 21 = PlayerWin
   | playerScore == 21 && dealerScore == 21 = PlayerWin
   | playerScore == 22 && dealerScore == 22 = DealerWin
-  -- this otherwise should never be reached, but adding it anyway to make function total
-  | otherwise =
+  | otherwise
+    -- this case should never happen, but adding it anyway to make function total
+   =
     if playerScore > dealerScore
       then PlayerWin
       else DealerWin

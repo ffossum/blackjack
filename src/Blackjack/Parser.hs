@@ -32,7 +32,11 @@ card = do
 value :: Parser Value
 value = choice [n, j, q, k, a]
   where
-    n = Numbered <$> decimal
+    n = do
+      v <- decimal
+      if v >= 2 && v <= 10
+        then pure $ Numbered v
+        else fail $ "illegal card value: " <> show v
     j = Jack <$ char 'J'
     q = Queen <$ char 'Q'
     k = King <$ char 'K'
