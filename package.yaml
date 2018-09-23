@@ -25,6 +25,7 @@ dependencies:
   - text
   - text-show
   - attoparsec
+  - random-shuffle
 
 library:
   source-dirs: src

@@ -1,13 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Blackjack
-  ( someFunc
+  ( runGame
+  , randomDeck
+  , gameSummaryAsText
+  , PlayerName(..)
   ) where
 
 import Card
 import Control.Monad.State
 import Data.Text (Text)
 import qualified Data.Text as T
+import System.Random.Shuffle
 
 newtype PlayerName =
   PlayerName Text
@@ -30,15 +34,8 @@ data GameSummary = GameSummary
   , gameSummaryOutcome :: Outcome
   } deriving (Show)
 
-exampleDeck :: Deck
-exampleDeck =
-  Deck
-    [ Card Clubs Ace
-    , Card Diamonds (Numbered 5)
-    , Card Hearts (Numbered 9)
-    , Card Hearts Queen
-    , Card Spades (Numbered 8)
-    ]
+randomDeck :: IO Deck
+randomDeck = Deck <$> (shuffleM allCards)
 
 runGame :: PlayerName -> Deck -> GameSummary
 runGame playerName deck = evalState f initialState
@@ -122,11 +119,8 @@ determineOutcome gs
     playerScore = getPlayerScore gs
     dealerScore = getDealerScore gs
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
-
-gameSummaryToText :: GameSummary -> Text
-gameSummaryToText (GameSummary (PlayerName playerName) gs outcome) =
+gameSummaryAsText :: GameSummary -> Text
+gameSummaryAsText (GameSummary (PlayerName playerName) gs outcome) =
   winner <> "\n" <> playerCards <> "\n" <> dealerCards <> "\n"
   where
     winner =
