@@ -4,9 +4,12 @@ module Blackjack
   ( runGame
   , randomDeck
   , GameSummary(..)
+  , GameState(..)
   , gameSummaryAsText
+  , Outcome(..)
   , PlayerName(..)
   , Deck(..)
+  , anyBlackjack
   ) where
 
 import Card
@@ -17,42 +20,46 @@ import System.Random.Shuffle
 
 newtype PlayerName =
   PlayerName Text
-  deriving (Show)
+  deriving (Eq, Show)
 
 data Outcome
   = DealerWin
   | PlayerWin
-  deriving (Show)
+  deriving (Eq, Show)
 
 data GameState = GameState
   { gameStateDeck :: Deck
   , gameStatePlayerHand :: Hand
   , gameStateDealerHand :: Hand
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 data GameSummary = GameSummary
   { gameSummaryPlayerName :: PlayerName
   , gameSummaryGameState :: GameState
   , gameSummaryOutcome :: Outcome
-  } deriving (Show)
+  } deriving (Eq, Show)
 
 randomDeck :: IO Deck
 randomDeck = Deck <$> shuffleM allCards
 
 runGame :: PlayerName -> Deck -> Either String GameSummary
-runGame playerName deck = evalState f <$> initialState
+runGame playerName deck = evalState f <$> newGameState deck
   where
-    initialState = newGameState deck
     f = do
-      modify' playerPhase
-      modify' dealerPhase
-      finalState <- get
+      initialState <- get
+      finalState <-
+        if (anyBlackjack initialState)
+          then pure initialState
+          else do
+            modify' playerPhase
+            modify' dealerPhase
+            get
       let outcome = determineOutcome finalState
       return (GameSummary playerName finalState outcome)
 
 newGameState :: Deck -> Either String GameState
 newGameState (Deck (c0:c1:c2:c3:cs)) =
-  Right $ GameState (Deck cs) (Hand [c2, c0]) (Hand [c3, c1])
+  Right $ GameState (Deck cs) [c2, c0] [c3, c1]
 newGameState _ = Left "Not enough cards in the deck."
 
 playerPhase :: GameState -> GameState
@@ -74,7 +81,16 @@ getDealerScore :: GameState -> Int
 getDealerScore = handScore . gameStateDealerHand
 
 playerShouldDraw :: GameState -> Bool
-playerShouldDraw gs = (getPlayerScore gs) < 17
+playerShouldDraw gs = (getPlayerScore gs) < 17 && (not dealerHasBlackjack)
+  where
+    dealerHasBlackjack = isBlackjack (gameStateDealerHand gs)
+
+anyBlackjack :: GameState -> Bool
+anyBlackjack (GameState deck ph dh) = isBlackjack ph || isBlackjack dh
+
+isBlackjack :: Hand -> Bool
+isBlackjack h@[_, _] = handScore h == 21
+isBlackjack _ = False
 
 dealerShouldDraw :: GameState -> Bool
 dealerShouldDraw gs =
@@ -102,7 +118,7 @@ drawCardForDealer gs = do
   pure $ (addCardToDealerHand card . removeTopCard) gs
 
 addCardToHand :: Card -> Hand -> Hand
-addCardToHand c (Hand cs) = Hand (c : cs)
+addCardToHand = (:)
 
 addCardToPlayerHand :: Card -> GameState -> GameState
 addCardToPlayerHand c (GameState d ph dh) = GameState d (addCardToHand c ph) dh
@@ -135,8 +151,8 @@ gameSummaryAsText (GameSummary (PlayerName playerName) gs outcome) =
         PlayerWin -> playerName
         DealerWin -> "dealer"
     playerCards =
-      let (Hand cs) = gameStatePlayerHand gs
-      in playerName <> ": " <> (T.intercalate ", " (cardAsText <$> reverse cs))
+      let h = gameStatePlayerHand gs
+      in playerName <> ": " <> (T.intercalate ", " (cardAsText <$> reverse h))
     dealerCards =
-      let (Hand cs) = gameStateDealerHand gs
-      in "dealer: " <> (T.intercalate ", " (cardAsText <$> reverse cs))
+      let h = gameStateDealerHand gs
+      in "dealer: " <> (T.intercalate ", " (cardAsText <$> reverse h))

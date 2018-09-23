@@ -29,11 +29,9 @@ data Card =
 
 newtype Deck =
   Deck [Card]
-  deriving (Show)
-
-newtype Hand =
-  Hand [Card]
   deriving (Eq, Show)
+
+type Hand = [Card]
 
 suitAsText :: Suit -> Text
 suitAsText Clubs = "C"
@@ -71,6 +69,6 @@ cardScore (Card _ value) =
     _ -> 10
 
 handScore :: Hand -> Int
-handScore (Hand hand) = foldl' addCard 0 hand
+handScore = foldl' addCard 0
   where
     addCard score card = score + (cardScore card)

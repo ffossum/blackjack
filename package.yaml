@@ -26,6 +26,8 @@ dependencies:
   - text-show
   - attoparsec
   - random-shuffle
+  - hspec
+  - QuickCheck
 
 library:
   source-dirs: src
