@@ -43,8 +43,8 @@ runGame playerName deck = evalState f <$> initialState
   where
     initialState = newGameState deck
     f = do
-      modify' drawPlayerCards
-      modify' drawDealerCards
+      modify' playerPhase
+      modify' dealerPhase
       finalState <- get
       let outcome = determineOutcome finalState
       return (GameSummary playerName finalState outcome)
@@ -54,16 +54,16 @@ newGameState (Deck (c0:c1:c2:c3:cs)) =
   Right $ GameState (Deck cs) (Hand [c2, c0]) (Hand [c3, c1])
 newGameState _ = Left "Not enough cards in the deck."
 
-drawPlayerCards :: GameState -> GameState
-drawPlayerCards gs =
+playerPhase :: GameState -> GameState
+playerPhase gs =
   if playerShouldDraw gs
-    then drawPlayerCards (drawCardForPlayer gs)
+    then maybe gs playerPhase (drawCardForPlayer gs)
     else gs
 
-drawDealerCards :: GameState -> GameState
-drawDealerCards gs =
+dealerPhase :: GameState -> GameState
+dealerPhase gs =
   if dealerShouldDraw gs
-    then drawDealerCards (drawCardForDealer gs)
+    then maybe gs dealerPhase (drawCardForDealer gs)
     else gs
 
 getPlayerScore :: GameState -> Int
@@ -90,17 +90,15 @@ peekTopCard _ = Nothing
 removeTopCard :: GameState -> GameState
 removeTopCard (GameState (Deck (_:cs)) ph dh) = GameState (Deck cs) ph dh
 
-drawCardForPlayer :: GameState -> GameState
-drawCardForPlayer gs =
-  case peekTopCard gs of
-    Just card -> (addCardToPlayerHand card . removeTopCard) gs
-    Nothing -> gs
+drawCardForPlayer :: GameState -> Maybe GameState
+drawCardForPlayer gs = do
+  card <- peekTopCard gs
+  pure $ (addCardToPlayerHand card . removeTopCard) gs
 
-drawCardForDealer :: GameState -> GameState
-drawCardForDealer gs =
-  case peekTopCard gs of
-    Just card -> (addCardToDealerHand card . removeTopCard) gs
-    Nothing -> gs
+drawCardForDealer :: GameState -> Maybe GameState
+drawCardForDealer gs = do
+  card <- peekTopCard gs
+  pure $ (addCardToDealerHand card . removeTopCard) gs
 
 addCardToHand :: Card -> Hand -> Hand
 addCardToHand c (Hand cs) = Hand (c : cs)
