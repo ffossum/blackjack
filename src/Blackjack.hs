@@ -9,6 +9,10 @@ import Control.Monad.State
 import Data.Text (Text)
 import qualified Data.Text as T
 
+newtype PlayerName =
+  PlayerName Text
+  deriving (Show)
+
 data Outcome
   = DealerWin
   | PlayerWin
@@ -21,7 +25,7 @@ data GameState = GameState
   } deriving (Show)
 
 data GameSummary = GameSummary
-  { gameSummaryPlayerName :: Text
+  { gameSummaryPlayerName :: PlayerName
   , gameSummaryGameState :: GameState
   , gameSummaryOutcome :: Outcome
   } deriving (Show)
@@ -36,7 +40,7 @@ exampleDeck =
     , Card Spades (Numbered 8)
     ]
 
-runGame :: Text -> Deck -> GameSummary
+runGame :: PlayerName -> Deck -> GameSummary
 runGame playerName deck = evalState f initialState
   where
     initialState = newGameState deck
@@ -122,7 +126,7 @@ someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 gameSummaryToText :: GameSummary -> Text
-gameSummaryToText (GameSummary playerName gs outcome) =
+gameSummaryToText (GameSummary (PlayerName playerName) gs outcome) =
   winner <> "\n" <> playerCards <> "\n" <> dealerCards <> "\n"
   where
     winner =
